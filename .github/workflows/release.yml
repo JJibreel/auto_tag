@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  pull_request:
+    types:
+      - labeled
+      - closed
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'labeled'
+    steps:
+      - uses: actions/checkout@v2
+      # Create comment on PR with next version
+      - uses: haya14busa/action-bumpr@v1
+  version:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed' && github.event.pull_request.merged
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+      # Create tag in response to PR merge if labelled appropriately
+      - uses: haya14busa/action-bumpr@v1
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}
+          default_bump_level: patch
+  release:
+    runs-on: "ubuntu-latest"
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GH_TOKEN }}"
+          prerelease: false
